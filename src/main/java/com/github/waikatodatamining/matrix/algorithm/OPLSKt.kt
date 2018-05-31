@@ -2,7 +2,6 @@ package com.github.waikatodatamining.matrix.algorithm
 
 import Jama.Matrix
 import com.github.waikatodatamining.matrix.core.*
-import com.github.waikatodatamining.matrix.core.MatrixEntryType.COL
 import com.github.waikatodatamining.matrix.core.MatrixHelper.l2VectorNorm
 
 open class OPLSKt : AbstractSingleResponsePLS() {
@@ -11,24 +10,24 @@ open class OPLSKt : AbstractSingleResponsePLS() {
     private val serialVersionUID = -6097279189841762321L
 
     /** the P matrix  */
-    protected lateinit var m_Porth: Matrix
+    protected lateinit var Porth: Matrix
 
     /** the T matrix  */
-    protected lateinit var m_Torth: Matrix
+    protected lateinit var Torth: Matrix
 
     /** the W matrix  */
-    protected lateinit var m_Worth: Matrix
+    protected lateinit var Worth: Matrix
 
     /** Data with orthogonal signal components removed  */
-    protected lateinit var m_Xosc: Matrix
+    protected lateinit var Xosc: Matrix
 
     /** Base PLS that is trained on the cleaned data  */
-    protected lateinit var m_BasePLS: AbstractPLS
+    lateinit var basePLS: AbstractPLS
 
 
     override fun initialize() {
         super.initialize()
-        m_BasePLS = PLS1()
+        basePLS = PLS1()
 
     }
 
@@ -49,9 +48,9 @@ open class OPLSKt : AbstractSingleResponsePLS() {
      */
     override fun getMatrix(name: String): Matrix? {
         when (name) {
-            "P_orth" -> return m_Porth
-            "W_orth" -> return m_Worth
-            "T_orth" -> return m_Torth
+            "P_orth" -> return Porth
+            "W_orth" -> return Worth
+            "T_orth" -> return Torth
             else -> return null
         }
     }
@@ -86,8 +85,8 @@ open class OPLSKt : AbstractSingleResponsePLS() {
     }
 
     override fun doTransform(predictors: Matrix): Matrix {
-        val T = predictors * m_Worth
-        val Xorth = T * m_Porth.T
+        val T = predictors * Worth
+        val Xorth = T * Porth.T
         return predictors - Xorth
     }
 
@@ -101,7 +100,7 @@ open class OPLSKt : AbstractSingleResponsePLS() {
      */
     override fun doPerformPredictions(predictors: Matrix): Matrix {
         val Xtransformed = transform(predictors)
-        return m_BasePLS.predict(Xtransformed)
+        return basePLS.predict(Xtransformed)
     }
 
     /**
@@ -124,15 +123,14 @@ open class OPLSKt : AbstractSingleResponsePLS() {
         val y = response
 
         // init
-        m_Worth = Matrix(predictors.columnDimension, numComponents)
-        m_Porth = Matrix(predictors.columnDimension, numComponents)
-        m_Torth = Matrix(predictors.rowDimension, numComponents)
+        Worth = Matrix(predictors.columnDimension, numComponents)
+        Porth = Matrix(predictors.columnDimension, numComponents)
+        Torth = Matrix(predictors.rowDimension, numComponents)
 
         w = Xtrans * y / y.l2Sq()
         w = w.normalized()
 
         for (j in 0 until numComponents) {
-
             // Calculate scores vector
             t = X * w / w.l2Sq()
 
@@ -140,7 +138,7 @@ open class OPLSKt : AbstractSingleResponsePLS() {
             p = Xtrans * t / t.l2Sq()
 
             // Orthogonalize weight
-            wOrth = p - w * (w.T * p / w.l2Sq()).asDouble()
+            wOrth = p - w * (w.T * p / w.l2Sq())
             wOrth = wOrth.normalized()
             tOrth = X * wOrth / wOrth.l2Sq()
             pOrth = Xtrans * tOrth / tOrth.l2Sq()
@@ -150,13 +148,13 @@ open class OPLSKt : AbstractSingleResponsePLS() {
             Xtrans = X.T
 
             // Store results
-            m_Worth[COL, j] = wOrth
-            m_Torth[COL, j] = tOrth
-            m_Porth[COL, j] = pOrth
+            Worth[j] = wOrth
+            Torth[j] = tOrth
+            Porth[j] = pOrth
         }
 
-        m_Xosc = X.copy()
-        m_BasePLS.initialize(this.doTransform(predictors), response)
+        Xosc = X.copy()
+        basePLS.initialize(this.doTransform(predictors), response)
 
         return null
     }
