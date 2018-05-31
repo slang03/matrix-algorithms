@@ -128,31 +128,31 @@ open class OPLSKt : AbstractSingleResponsePLS() {
         m_Porth = Matrix(predictors.columnDimension, numComponents)
         m_Torth = Matrix(predictors.rowDimension, numComponents)
 
-        w = Xtrans * y * (1.0 / y.l2Sq())
+        w = Xtrans * y / y.l2Sq()
         w = w.normalized()
 
-        for (currentComponent in 0 until numComponents) {
+        for (j in 0 until numComponents) {
 
             // Calculate scores vector
-            t = X * w * (1.0 / w.l2Sq())
+            t = X * w / w.l2Sq()
 
             // Calculate loadings of X
-            p = Xtrans * t * (1.0 / t.l2Sq())
+            p = Xtrans * t / t.l2Sq()
 
             // Orthogonalize weight
-            wOrth = p - w * (w.T * p * (1.0 / w.l2Sq()))[0, 0]
+            wOrth = p - w * (w.T * p / w.l2Sq()).asDouble()
             wOrth = wOrth.normalized()
-            tOrth = X * wOrth * (1.0 / wOrth.l2Sq())
-            pOrth = Xtrans * tOrth * (1.0 / tOrth.l2Sq())
+            tOrth = X * wOrth / wOrth.l2Sq()
+            pOrth = Xtrans * tOrth / tOrth.l2Sq()
 
             // Remove orthogonal components from X
             X -= tOrth * pOrth.T
             Xtrans = X.T
 
             // Store results
-            m_Worth[COL, currentComponent] = wOrth
-            m_Torth[COL, currentComponent] = tOrth
-            m_Porth[COL, currentComponent] = pOrth
+            m_Worth[COL, j] = wOrth
+            m_Torth[COL, j] = tOrth
+            m_Porth[COL, j] = pOrth
         }
 
         m_Xosc = X.copy()

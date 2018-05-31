@@ -18,11 +18,15 @@ operator fun Matrix.set(type: MatrixEntryType, idx: Int, vector: Matrix) {
     }
 }
 
+operator fun Matrix.div(value: Double): Matrix = this * (1.0 / value)
+
 fun Matrix.normalized(): Matrix {
     val copy = this.copy()
     MatrixHelper.normalizeVector(copy)
     return copy
 }
+
+fun Matrix.asDouble() = this[0, 0]
 
 
 fun Matrix.l2() = MatrixHelper.l2VectorNorm(this)
