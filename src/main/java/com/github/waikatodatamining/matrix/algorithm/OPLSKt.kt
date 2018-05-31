@@ -128,22 +128,22 @@ open class OPLSKt : AbstractSingleResponsePLS() {
         m_Porth = Matrix(predictors.columnDimension, numComponents)
         m_Torth = Matrix(predictors.rowDimension, numComponents)
 
-        w = Xtrans * y * invL2Squared(y)
+        w = Xtrans * y * (1.0 / y.l2Sq())
         w = w.normalized()
 
         for (currentComponent in 0 until numComponents) {
 
             // Calculate scores vector
-            t = X * w * invL2Squared(w)
+            t = X * w * (1.0 / w.l2Sq())
 
             // Calculate loadings of X
-            p = Xtrans * t * invL2Squared(t)
+            p = Xtrans * t * (1.0 / t.l2Sq())
 
             // Orthogonalize weight
-            wOrth = p-(w * ((w.transpose() * p) * invL2Squared(w)).get(0, 0))
+            wOrth = p - w * (w.T * p * (1.0 / w.l2Sq()))[0, 0]
             wOrth = wOrth.normalized()
-            tOrth = (X * wOrth) * invL2Squared(wOrth)
-            pOrth = (Xtrans * tOrth) * invL2Squared(tOrth)
+            tOrth = X * wOrth * (1.0 / wOrth.l2Sq())
+            pOrth = Xtrans * tOrth * (1.0 / tOrth.l2Sq())
 
             // Remove orthogonal components from X
             X -= tOrth * pOrth.T
